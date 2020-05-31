@@ -14,7 +14,13 @@ pub enum Input {
     Jump = 3,
     Dodge = 4,
     Charge = 5,
-    None = 6,
+}
+
+pub struct Packet {
+    inputVec: Vec<[u8;3]>,
+    packetnumber: u32,
+    inputbuffer: Vec<[[u8;3];5]>,
+
 }
 
 fn main() {

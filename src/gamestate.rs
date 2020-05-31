@@ -1,4 +1,5 @@
 const grav:f32 = 0.5f32;
+use super::Input;
 enum sumoState{
     Neutral,
     Jump,
@@ -47,7 +48,7 @@ pub struct Game{
 
 }
 impl Game{
-    pub fn update(&self) {
+    pub fn update(&self,leftActions: &[Input] ,rightActions: &[Input]) {
         let updateTime = self.currentTime.elapsed().unwrap();
         self.currentTime = std::time::SystemTime::now();
         self.accumulator+= updateTime;
@@ -59,10 +60,26 @@ impl Game{
             
             for sumo in sumos.iter_mut(){
                 match sumo.state {
-                    sumoState::Jump =>sumo.velY-= grav
+                    sumoState::Jump =>{sumo.velY-= grav;}
+                    sumoState::Charge => {
+                        if sumo.velX < -1.0 {
+                            sumo.velX+=1.0;
+                        }else if sumo.velX < 0.0 {
+                            sumo.velX=0.0;
+                            sumo.state=sumoState::Neutral;
+                        }else if sumo.velX > 1.0 {
+                            sumo.velX-=1.0;
+                        }else if sumo.velX < 1.0 {
+                            sumo.velX=0.0;
+                            sumo.state=sumoState::Neutral;
+                        }else{
+                            sumo.state=sumoState::Neutral;
+                        }
+                    }
 
 
                 }
+
 
                 //Check if sumos go under the floor if they do stop them.
                 if sumo.posY < 50f32 {
@@ -71,6 +88,11 @@ impl Game{
                 }
 
 
+            }
+            for action in leftActions{
+                match action {
+                    
+                }
             }
 
             self.accumulator -= super::TIME_STEP;
