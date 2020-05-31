@@ -1,11 +1,13 @@
 const grav:f32 = 0.5f32;
+const friction:f32 = 0.95f32;
 use super::Input;
 //Sumo state is the possible state our sumo character can be in
+#[derive(PartialEq)]
 enum SumoState{
-    Neutral,
-    Jump,
-    Dodge,
-    Charge
+    Neutral = 0,
+    Jump = 1,
+    Dodge = 2, 
+    Charge = 3
 }
 
 //Our sumo characters that are fighting.
@@ -16,7 +18,8 @@ pub struct Sumo{
     velX: f32,
     height: i32,
     width: i32,
-    state: SumoState
+    state: SumoState,
+    dodgestart: std::time::SystemTime
 }
 impl Sumo{
     pub fn new(x: f32,y: f32, height: i32, width: i32) -> Sumo{
@@ -27,7 +30,8 @@ impl Sumo{
             velY: 0f32,
             height: height,
             width: width,
-            state: SumoState::Neutral
+            state: SumoState::Neutral,
+            dodgestart: std::time::SystemTime::now()
         }
     }
 }
@@ -69,6 +73,10 @@ impl Game{
         while self.accumulator >= super::TIME_STEP {
             //This for loop handles the non-player input update portion of the gamestate such as physics that must happen regardless of player input (collisions, gravity, etc)
             for sumo in sumos.iter_mut(){
+                if sumo.posY < 50f32 {
+                    sumo.state = SumoState::Neutral;
+                    sumo.posY = 50f32;
+                }
                 match sumo.state {
                     //If the sumo is in the jump state we want them to update their y velocity based on gravity
                     SumoState::Jump =>{sumo.velY-= grav;}
@@ -87,24 +95,73 @@ impl Game{
                         }else{
                             sumo.state=SumoState::Neutral;
                         }
+                        continue;
                     }
+                    SumoState::Dodge => {
+                        if sumo.dodgestart.elapsed().unwrap() > std::time::Duration::from_millis(500) {
+                            sumo.state = SumoState::Neutral;
+                        }else{
+                            continue;
+                        }
+                        
+                    }
+                    SumoState::Neutral => {
+
+                    }
+                    
 
 
+                }
+                sumo.posX += sumo.velX;
+                sumo.posY += sumo.velY;
+                if sumo.state != SumoState::Jump {
+                    sumo.velX *= friction;
                 }
 
 
                 //Check if sumos go under the floor if they do stop them.
-                if sumo.posY < 50f32 {
-                    sumo.state = SumoState::Neutral;
-                    sumo.posY = 50f32;
-                }
+                
 
 
             }
-            for action in leftActions{
-                match action {
-                    
+            fn action_tree (input: &Input, sumo: &mut Sumo){
+                match input {
+                    Input::Left => {
+                        sumo.velX -= 1.0;
+                    }
+                    Input::Right => {
+                        sumo.velX += 1.0;
+                    }
+                    Input::Charge => {
+                        if sumo.state == SumoState::Charge {return;}
+                        if sumo.velX > 0.0 {
+                            sumo.velX += 30.0;
+                        }else if sumo.velX < 0.0  {
+                            sumo.velX -= 30.0;
+                        }
+                        sumo.state = SumoState::Charge;
+                    }
+                    Input::Dodge => {
+                        if sumo.state != SumoState::Neutral {
+                            return;
+                        }
+                        sumo.dodgestart = std::time::SystemTime::now();
+                        sumo.state = SumoState::Dodge;
+                    }
+                    Input::Jump => {
+                        if sumo.state != SumoState::Neutral {
+                            return;
+                        }
+                        sumo.velY += 30.0;
+                        sumo.state = SumoState::Jump;
+                    }
                 }
+            }
+            for action in leftActions{
+                action_tree(action, &mut sumos[0]);
+            }
+            for action in rightActions{
+                action_tree(action, &mut sumos[1]);
             }
 
             self.accumulator -= super::TIME_STEP;
