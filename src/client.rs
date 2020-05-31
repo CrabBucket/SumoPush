@@ -3,9 +3,28 @@
 use std::net::{SocketAddr,UdpSocket};
 use std::thread;
 use super::Input;
-use super::Packet;
+
 pub fn any_array_size(array: Vec<u8>){
 
+}
+
+pub struct Packet {
+    inputs: [u8;3],
+    packetnumber: u32,
+    inputbuffer: [[u8;3];5],
+}
+impl Packet {
+    pub fn serialize(self) -> Vec<u8> {
+        [self.inputs.iter()
+                    .copied()
+                    .collect(),
+        self.packetnumber.to_le_bytes().to_vec(),
+        self.inputbuffer.iter()
+                        .flatten()
+                        .copied()
+                        .collect()
+        ].concat()
+    }
 }
 
 //Run client as all client needs to do is run the client portion
