@@ -4,9 +4,7 @@ use std::net::{SocketAddr,UdpSocket};
 use std::thread;
 use super::Input;
 
-pub fn any_array_size(array: Vec<u8>){
 
-}
 
 pub struct Packet {
     inputs: [u8;3],
