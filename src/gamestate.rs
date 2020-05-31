@@ -1,12 +1,14 @@
 const grav:f32 = 0.5f32;
 use super::Input;
-enum sumoState{
+//Sumo state is the possible state our sumo character can be in
+enum SumoState{
     Neutral,
     Jump,
     Dodge,
     Charge
 }
 
+//Our sumo characters that are fighting.
 pub struct Sumo{
     posX: f32,
     posY: f32,
@@ -14,7 +16,7 @@ pub struct Sumo{
     velX: f32,
     height: i32,
     width: i32,
-    state: sumoState
+    state: SumoState
 }
 impl Sumo{
     pub fn new(x: f32,y: f32, height: i32, width: i32) -> Sumo{
@@ -25,10 +27,11 @@ impl Sumo{
             velY: 0f32,
             height: height,
             width: width,
-            state: sumoState::Neutral
+            state: SumoState::Neutral
         }
     }
 }
+//The floor that the sumo characters stand on
 pub struct Floor{
     posX: f32,
     posY: f32,
@@ -36,7 +39,7 @@ pub struct Floor{
     width: i32,
 }
 
-
+//The gamestate that the server tracks
 pub struct Game{
     leftSumo: Sumo,
     rightSumo: Sumo,
@@ -48,32 +51,41 @@ pub struct Game{
 
 }
 impl Game{
-    pub fn update(&self,leftActions: &[Input] ,rightActions: &[Input]) {
+    //Updates the gamestate based on the actions that left and right players take.
+    pub fn update(mut self,leftActions: &[Input] ,rightActions: &[Input]) {
+        //Update time is the time since the last time we updated the simulation
         let updateTime = self.currentTime.elapsed().unwrap();
+        //Current time is the time we started updating this simulation
         self.currentTime = std::time::SystemTime::now();
+        //Accumulator is incremented by the amount of time it took us to update out last frame 
+        //(we only want to update every so often but if we miss updates due to lag we want to quickly fix our state)
         self.accumulator+= updateTime;
+        //Convient way to store both the left and right sumo to iterate
         let mut sumos = [self.leftSumo,self.rightSumo];
         
         
-
+        // this updates the simulation while we have accumulated time still left.
+        // AS long as the accumulator is greater than TIME_STEP (our server tickrate essentially) we continue to fix the state till we catch up.
         while self.accumulator >= super::TIME_STEP {
-            
+            //This for loop handles the non-player input update portion of the gamestate such as physics that must happen regardless of player input (collisions, gravity, etc)
             for sumo in sumos.iter_mut(){
                 match sumo.state {
-                    sumoState::Jump =>{sumo.velY-= grav;}
-                    sumoState::Charge => {
+                    //If the sumo is in the jump state we want them to update their y velocity based on gravity
+                    SumoState::Jump =>{sumo.velY-= grav;}
+                    //IF they are charging we slow them down gradually until the reach zero and set them to to neutral
+                    SumoState::Charge => {
                         if sumo.velX < -1.0 {
                             sumo.velX+=1.0;
                         }else if sumo.velX < 0.0 {
                             sumo.velX=0.0;
-                            sumo.state=sumoState::Neutral;
+                            sumo.state=SumoState::Neutral;
                         }else if sumo.velX > 1.0 {
                             sumo.velX-=1.0;
                         }else if sumo.velX < 1.0 {
                             sumo.velX=0.0;
-                            sumo.state=sumoState::Neutral;
+                            sumo.state=SumoState::Neutral;
                         }else{
-                            sumo.state=sumoState::Neutral;
+                            sumo.state=SumoState::Neutral;
                         }
                     }
 
@@ -83,7 +95,7 @@ impl Game{
 
                 //Check if sumos go under the floor if they do stop them.
                 if sumo.posY < 50f32 {
-                    sumo.state = sumoState::Neutral;
+                    sumo.state = SumoState::Neutral;
                     sumo.posY = 50f32;
                 }
 
