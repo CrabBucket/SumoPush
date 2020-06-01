@@ -1,5 +1,5 @@
-const grav:f32 = 0.5f32;
-const friction:f32 = 0.95f32;
+const grav:i32 = 1;
+
 use super::Input;
 //Sumo state is the possible state our sumo character can be in
 #[derive(PartialEq)]
@@ -12,22 +12,22 @@ enum SumoState{
 
 //Our sumo characters that are fighting.
 pub struct Sumo{
-    posX: f32,
-    posY: f32,
-    velY: f32,
-    velX: f32,
+    posX: i32,
+    posY: i32,
+    velY: i32,
+    velX: i32,
     height: i32,
     width: i32,
     state: SumoState,
     dodgestart: std::time::SystemTime
 }
 impl Sumo{
-    pub fn new(x: f32,y: f32, height: i32, width: i32) -> Sumo{
+    pub fn new(x: i32,y: i32, height: i32, width: i32) -> Sumo{
         Sumo{
             posX: x,
             posY: y,
-            velX: 0f32,
-            velY: 0f32,
+            velX: 0,
+            velY: 0,
             height: height,
             width: width,
             state: SumoState::Neutral,
@@ -37,8 +37,8 @@ impl Sumo{
 }
 //The floor that the sumo characters stand on
 pub struct Floor{
-    posX: f32,
-    posY: f32,
+    posX: i32,
+    posY: i32,
     height: i32,
     width: i32,
 }
@@ -73,24 +73,25 @@ impl Game{
         while self.accumulator >= super::TIME_STEP {
             //This for loop handles the non-player input update portion of the gamestate such as physics that must happen regardless of player input (collisions, gravity, etc)
             for sumo in sumos.iter_mut(){
-                if sumo.posY < 50f32 {
+                if sumo.posY < 50 {
                     sumo.state = SumoState::Neutral;
-                    sumo.posY = 50f32;
+                    sumo.posY = 50;
                 }
                 match sumo.state {
                     //If the sumo is in the jump state we want them to update their y velocity based on gravity
                     SumoState::Jump =>{sumo.velY-= grav;}
                     //IF they are charging we slow them down gradually until the reach zero and set them to to neutral
                     SumoState::Charge => {
-                        if sumo.velX < -1.0 {
-                            sumo.velX+=1.0;
-                        }else if sumo.velX < 0.0 {
-                            sumo.velX=0.0;
+                        let chargefactor = 3;
+                        if sumo.velX < -chargefactor{
+                            sumo.velX+=chargefactor;
+                        }else if sumo.velX < 0{
+                            sumo.velX=0;
                             sumo.state=SumoState::Neutral;
-                        }else if sumo.velX > 1.0 {
-                            sumo.velX-=1.0;
-                        }else if sumo.velX < 1.0 {
-                            sumo.velX=0.0;
+                        }else if sumo.velX > chargefactor{
+                            sumo.velX-=chargefactor;
+                        }else if sumo.velX < chargefactor{
+                            sumo.velX=0;
                             sumo.state=SumoState::Neutral;
                         }else{
                             sumo.state=SumoState::Neutral;
@@ -115,7 +116,7 @@ impl Game{
                 sumo.posX += sumo.velX;
                 sumo.posY += sumo.velY;
                 if sumo.state != SumoState::Jump {
-                    sumo.velX *= friction;
+                    sumo.velX -= 1
                 }
 
 
@@ -125,19 +126,21 @@ impl Game{
 
             }
             fn action_tree (input: &Input, sumo: &mut Sumo){
+                let movefactor = 2;
                 match input {
+                    
                     Input::Left => {
-                        sumo.velX -= 1.0;
+                        sumo.velX -= movefactor;
                     }
                     Input::Right => {
-                        sumo.velX += 1.0;
+                        sumo.velX += movefactor;
                     }
                     Input::Charge => {
                         if sumo.state == SumoState::Charge {return;}
-                        if sumo.velX > 0.0 {
-                            sumo.velX += 30.0;
-                        }else if sumo.velX < 0.0  {
-                            sumo.velX -= 30.0;
+                        if sumo.velX > 0 {
+                            sumo.velX += 30;
+                        }else if sumo.velX < 0  {
+                            sumo.velX -= 30;
                         }
                         sumo.state = SumoState::Charge;
                     }
@@ -152,7 +155,7 @@ impl Game{
                         if sumo.state != SumoState::Neutral {
                             return;
                         }
-                        sumo.velY += 30.0;
+                        sumo.velY += 30;
                         sumo.state = SumoState::Jump;
                     }
                 }
@@ -171,9 +174,9 @@ impl Game{
 
 pub fn init_game() -> Game{
     Game{
-        leftSumo: Sumo::new(-250f32,50f32,100,50),
-        rightSumo: Sumo::new(250f32,50f32,100,50),
-        floor: Floor{posX:0f32,posY:0f32,height:50,width:1000},
+        leftSumo: Sumo::new(-250,50,100,50),
+        rightSumo: Sumo::new(250,50,100,50),
+        floor: Floor{posX:0,posY:0,height:50,width:1000},
         leftScore:0,
         rightScore:0,
         accumulator: std::time::Duration::new(0,0),

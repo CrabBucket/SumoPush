@@ -28,9 +28,9 @@ pub fn run_server(port: i32) {
         }
     }
     //Temp sumos for testing
-    let mut left = Sumo::new(12f32,12f32,20,20);
-    let mut right = Sumo::new(12f32,12f32,20,20);
-    //Buffers are going to be used to recieve packets from the clients.f32
+    let mut left = Sumo::new(12,12,20,20);
+    let mut right = Sumo::new(12,12,20,20);
+    //Buffers are going to be used to recieve packets from the clients.
     //In the future we will need both packets from the client at the time step to update the server gamestate
     let leftBuffer: Vec<[u8; 64]> = Vec::new();
     let rightBuffer: Vec<[u8; 64]> = Vec::new();

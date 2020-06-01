@@ -5,13 +5,21 @@ use std::thread;
 use super::Input;
 
 
-
+#[derive(Debug,PartialEq,Clone)]
 pub struct Packet {
     inputs: [u8;3],
     packetnumber: u32,
     inputbuffer: [[u8;3];5],
 }
 impl Packet {
+    pub fn test() {
+        let testpacket = Packet{
+            inputs: [1u8;3],
+            packetnumber: 33,
+            inputbuffer: [[5u8;3];5]
+        };
+        assert!(testpacket == Packet::deserialize(&(testpacket.clone().serialize())));
+    }
     pub fn serialize(self) -> Vec<u8> {
         [self.inputs.iter()
                     .copied()
@@ -23,6 +31,26 @@ impl Packet {
                         .collect()
         ].concat()
     }
+    pub fn deserialize(data: &[u8]) -> Packet {
+        let inputs = [data[0],data[1],data[2]];
+
+        let packetnumbervec = &data[3..7];
+        let packetnumber = u32::from_le_bytes([packetnumbervec[0],packetnumbervec[1],packetnumbervec[2],packetnumbervec[3]]);
+        let mut inputbuffer = [[0u8;3];5];
+        let mut index = 7;
+        for x in 0..=4 {
+            for y in 0..=2{
+                inputbuffer[x][y] = data[index];
+                index+=1;
+            }
+        }
+
+        Packet{
+            inputs: inputs,
+            packetnumber: packetnumber,
+            inputbuffer: inputbuffer
+        }
+    }
 }
 
 //Run client as all client needs to do is run the client portion
@@ -30,6 +58,8 @@ pub fn run_client(connection: SocketAddr){
     
     let temp = [0u8;32].to_vec();
     
+    Packet::test();
+
     // Create socket to listen for server packets
     let localadr = "127.0.0.1:";
     let mut attempt = 3001;
